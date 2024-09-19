@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:pushpushgo_sdk/pushpushgo_sdk.dart'; // Import the SDK
 import 'buttons_view_model.dart';
-import 'beacon_card_view.dart';
 
 void main() {
   runApp(const MyApp());
@@ -11,29 +11,45 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Initialize the Pushpushgo SDK here
+    final pushpushgo = PushpushgoSdk({
+      "apiToken": "my-api-key-from-pushpushgo-app",
+      "projectId": "my-project-id-from-pushpushgo-app",
+    });
+
     return MaterialApp(
       title: 'Flutter PPG Example',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
       ),
-      home: const MyHomePage(title: 'Flutter PPG Example Home Page'),
+      home: MyHomePage(
+        title: 'Flutter PPG Example Home Page',
+        pushpushgoSdk: pushpushgo, // Pass the SDK instance to the home page
+      ),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({super.key, required this.title, required this.pushpushgoSdk});
 
   final String title;
+  final PushpushgoSdk pushpushgoSdk;
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final ButtonsViewModel _viewModel = ButtonsViewModel();
-  bool _showBeaconCard = false;
+  late ButtonsViewModel _viewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize the ViewModel with the PushpushgoSdk instance
+    _viewModel = ButtonsViewModel(widget.pushpushgoSdk);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,48 +65,32 @@ class _MyHomePageState extends State<MyHomePage> {
           children: <Widget>[
             ElevatedButton(
               onPressed: () {
-                setState(() {
-                  _viewModel.sendBeacon();
-                  _showBeaconCard = true;
-                });
+                _viewModel.registerForNotifications();
+              },
+              child: const Text('Subscribe for Notifications'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                _viewModel.unregisterFromNotifications();
+              },
+              child: const Text('Unsubscribe from Notifications'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                _viewModel.getSubscriberId();
+              },
+              child: const Text('Get Subscriber ID'),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () {
+                _viewModel.sendBeacon();
               },
               child: const Text('Send Beacon'),
             ),
             const SizedBox(height: 16),
-
-            // Conditionally display the card
-            if (_showBeaconCard)
-              BeaconCardView(
-                viewModel: _viewModel,
-                onCancel: () {
-                  setState(() {
-                    _showBeaconCard = false;
-                  });
-                },
-              ),
-            const SizedBox(height: 16),
-
-            // Unregister button
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _viewModel.unregisterSubscriber();
-                });
-              },
-              child: const Text('Unregister'),
-            ),
-            const SizedBox(height: 16),
-
-            // Get SubscriberID button
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  _viewModel.getSubscriberId();
-                });
-              },
-              child: const Text('SubscriberID'),
-            ),
-
             // Display message from the ViewModel
             if (_viewModel.message.isNotEmpty)
               Padding(

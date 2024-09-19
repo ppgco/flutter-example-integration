@@ -50,12 +50,7 @@ class BeaconCardView extends StatelessWidget {
               children: [
                 ElevatedButton(
                   onPressed: () {
-                    int ttl = int.tryParse(ttlController.text) ?? 0;
-                    viewModel.sendBeaconWithData(
-                      tagController.text,
-                      labelController.text,
-                      ttl,
-                    );
+                    viewModel.sendBeacon();
                     onCancel(); // Close the card
                   },
                   style: ElevatedButton.styleFrom(backgroundColor: Colors.green),

@@ -1,30 +1,65 @@
 import 'package:flutter/material.dart';
+import 'package:pushpushgo_sdk/beacon.dart';
+import 'package:pushpushgo_sdk/pushpushgo_sdk.dart';
 
-// ViewModel to handle the business logic
 class ButtonsViewModel with ChangeNotifier {
   String message = "";
+  final PushpushgoSdk _pushpushgo;
 
-  // This function is triggered by the Send Beacon button
-  void sendBeacon() {
-    message = "Send Beacon button clicked";
+  // Accept the PushpushgoSdk instance from outside
+  ButtonsViewModel(this._pushpushgo);
+
+  // Subscribe for notifications
+  Future<void> registerForNotifications() async {
+    try {
+      await _pushpushgo.registerForNotifications();
+      message = "Subscribed for notifications";
+    } catch (e) {
+      message = "Failed to subscribe for notifications: $e";
+    }
     notifyListeners();
   }
 
-  // Function to send beacon data with tag, label, and ttl
-  void sendBeaconWithData(String tag, String label, int ttl) {
-    message = "Beacon sent with tag: $tag, label: $label, ttl: $ttl";
+  // Unsubscribe from notifications
+  Future<void> unregisterFromNotifications() async {
+    try {
+      await _pushpushgo.unregisterFromNotifications();
+      message = "Unsubscribed from notifications";
+    } catch (e) {
+      message = "Failed to unsubscribe from notifications: $e";
+    }
     notifyListeners();
   }
 
-  // Function to unregister the subscriber
-  void unregisterSubscriber() {
-    message = "Unregistered successfully";
+  // Get subscriber ID
+  Future<void> getSubscriberId() async {
+    try {
+      final subscriberId = await _pushpushgo.getSubscriberId();
+      message = "Subscriber ID: $subscriberId";
+    } catch (e) {
+      message = "Failed to get subscriber ID: $e";
+    }
     notifyListeners();
   }
 
-  // Function to get subscriber ID
-  void getSubscriberId() {
-    message = "Subscriber ID: XYZ123";
+  // Send beacons for subscriber
+  Future<void> sendBeacon() async {
+    try {
+      final beacon = Beacon(
+        tags: {
+          Tag.fromString("Flutter:test"),
+          Tag(key: "Flutter", value: "test", strategy: "append", ttl: 0),
+        },
+        tagsToDelete: {},
+        customId: "my_id",
+        selectors: {"my": "data"},
+      );
+
+      await _pushpushgo.sendBeacon(beacon);
+      message = "Beacon sent successfully";
+    } catch (e) {
+      message = "Failed to send beacon: $e";
+    }
     notifyListeners();
   }
 }
