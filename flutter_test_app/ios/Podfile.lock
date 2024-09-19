@@ -1,0 +1,33 @@
+PODS:
+  - Flutter (1.0.0)
+  - PPG_framework (1.2.0)
+  - pushpushgo_sdk (0.0.1):
+    - Flutter
+    - PPG_framework
+
+DEPENDENCIES:
+  - Flutter (from `Flutter`)
+  - PPG_framework (from `https://github.com/ppgco/ios-sdk.git`)
+  - pushpushgo_sdk (from `.symlinks/plugins/pushpushgo_sdk/ios`)
+
+EXTERNAL SOURCES:
+  Flutter:
+    :path: Flutter
+  PPG_framework:
+    :git: https://github.com/ppgco/ios-sdk.git
+  pushpushgo_sdk:
+    :path: ".symlinks/plugins/pushpushgo_sdk/ios"
+
+CHECKOUT OPTIONS:
+  PPG_framework:
+    :commit: 193ab4a172cc049b9e222deebbbcebcb1b4ae53c
+    :git: https://github.com/ppgco/ios-sdk.git
+
+SPEC CHECKSUMS:
+  Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
+  PPG_framework: 8fb3b0bf101b73d38518fe41d3cb95d52a1dd53a
+  pushpushgo_sdk: abc573c469e675276e8915b896b0c8bc2945a017
+
+PODFILE CHECKSUM: 278d0b17db5f8bd962504305aa6c36d477ba5c87
+
+COCOAPODS: 1.15.2
