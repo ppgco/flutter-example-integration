@@ -56,7 +56,7 @@ class ButtonsViewModel with ChangeNotifier {
       );
 
       await _pushpushgo.sendBeacon(beacon);
-      message = "Beacon sent successfully";
+      message = "Beacon sent successfully. Data will appear on subscriber up to 15 min.";
     } catch (e) {
       message = "Failed to send beacon: $e";
     }
