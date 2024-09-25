@@ -42,7 +42,8 @@ Note: Test app supports integration on platforms: **iOS / Android**
    $ flutterfire configure --project=your-firebase-project-id
     ```
    Follow instructions provided in terminal.
-   Note: If you cant use flutterfire command, add **export PATH="$PATH":"$HOME/.pub-cache/bin"** to your .zshrc file
+
+   Note: If you cant use flutterfire command, add **export PATH="$PATH":"$HOME/.pub-cache/bin"** to your .zshrc file.
 5. Open Android folder in your Flutter project and synchronize files
 6. Generate FCM v1 credentials and upload it in PPG APP:
    * Go to your Firebase console and navigate to project settings
@@ -66,5 +67,13 @@ Navigate to root of your Flutter project and run:
 $ flutter pub get
 ```
 
-To run ios part - in Xcode open ios/Runner.xcworkspace and press CMD + R (make sure Runner is active scheme)
-To run android - in Android studio open android/ then build and run app
+To run ios part - in Xcode open ios/Runner.xcworkspace and press CMD + R (make sure Runner is active scheme).
+
+To run android - in Android studio open android/ then build and run app.
+
+## Functionalities
+Inside application /lib/ folder you can see example implementation of PushPushGo sdk methods:
+* Subscribe
+* Unsubscribe
+* Show subscriber ID
+* Send test beacon
