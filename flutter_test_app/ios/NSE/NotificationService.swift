@@ -24,6 +24,9 @@ class NotificationService: UNNotificationServiceExtension {
         group.enter()
         group.enter()
 
+        // Fill your App Group ID (must match Runner.entitlements and PushpushgoSdk appGroupId)
+        SharedData.shared.appGroupId = "YOUR APP GROUP ID"
+
         PPG.notificationDelivered(notificationRequest: request) { _ in
             group.leave()
         }

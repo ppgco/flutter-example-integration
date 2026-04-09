@@ -25,3 +25,15 @@ doc/api/
 
 .flutter-plugins
 .flutter-plugins-dependencies
+
+# Firebase credentials — contain real API keys, never commit these
+**/google-services.json
+**/GoogleService-Info.plist
+**/firebase_options.dart
+**/firebase.json
+
+# macOS system files
+.DS_Store
+
+# Local test/scratch files
+**/.test
