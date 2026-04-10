@@ -9,7 +9,8 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -22,6 +23,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late final PushpushgoSdk _pushpushgo;
+  bool _isInitialized = false;
 
   @override
   void initState() {
@@ -35,30 +37,36 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _initialize() async {
-    await _pushpushgo.initialize(
-      onNewSubscriptionHandler: (subscriberId) {
-        log("New subscriber ID: $subscriberId");
-      },
-      onNotificationClickedHandler: (notificationData) {
-        log("Notification clicked: ${notificationData.toString()}");
-      },
-    );
-
-    await PPGInAppMessages.instance.initialize(
-      apiKey: "YOUR API KEY",
-      projectId: "YOUR PROJECT ID",
-    );
-
-    PPGInAppMessages.instance.setCustomCodeActionHandler((code) {
-      log("Custom code action received: $code");
-      scaffoldMessengerKey.currentState?.showSnackBar(
-        SnackBar(
-          content: Text("Custom code action: $code"),
-          backgroundColor: Colors.deepPurple,
-          duration: const Duration(seconds: 3),
-        ),
+    try {
+      await _pushpushgo.initialize(
+        onNewSubscriptionHandler: (subscriberId) {
+          log("New subscriber ID: $subscriberId");
+        },
+        onNotificationClickedHandler: (notificationData) {
+          log("Notification clicked: ${notificationData.toString()}");
+        },
       );
-    });
+
+      await PPGInAppMessages.instance.initialize(
+        apiKey: "YOUR API KEY",
+        projectId: "YOUR PROJECT ID",
+      );
+
+      PPGInAppMessages.instance.setCustomCodeActionHandler((code) {
+        log("Custom code action received: $code");
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text("Custom code action: $code"),
+            backgroundColor: Colors.deepPurple,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      });
+    } catch (e) {
+      log("SDK initialization error: $e");
+    } finally {
+      if (mounted) setState(() => _isInitialized = true);
+    }
   }
 
   @override
@@ -77,18 +85,35 @@ class _MyAppState extends State<MyApp> {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
-        routes: {
-          '/': (context) => const MyHomePage(title: 'Flutter PPG Example'),
-        },
+        home: MyHomePage(title: 'Flutter PPG Example', isInitialized: _isInitialized),
+      ),
+    );
+  }
+}
+
+class _LoadingTab extends StatelessWidget {
+  const _LoadingTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 16),
+          Text('Initializing SDK...'),
+        ],
       ),
     );
   }
 }
 
 class MyHomePage extends StatelessWidget {
-  const MyHomePage({super.key, required this.title});
+  const MyHomePage({super.key, required this.title, required this.isInitialized});
 
   final String title;
+  final bool isInitialized;
 
   @override
   Widget build(BuildContext context) {
@@ -105,10 +130,10 @@ class MyHomePage extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
+        body: TabBarView(
           children: [
-            PushNotificationsTab(),
-            InAppMessagesTab(),
+            isInitialized ? const PushNotificationsTab() : const _LoadingTab(),
+            isInitialized ? const InAppMessagesTab() : const _LoadingTab(),
           ],
         ),
       ),

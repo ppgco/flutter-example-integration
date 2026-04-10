@@ -2,7 +2,7 @@
 Example of integration PPG Flutter SDK with a Flutter application
 
 ## Description
-This is a test app for validating the integration of the PushPushGo Flutter SDK (`pushpushgo_sdk ^1.3.3`).
+This is a test app for validating the integration of the PushPushGo Flutter SDK (`pushpushgo_sdk ^1.3.4`).
 It provides two dedicated tabs for testing all SDK features:
 
 - **Push tab** — Push Notification subscription, unsubscription, subscriber ID, and Beacon
