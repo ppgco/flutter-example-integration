@@ -1,0 +1,15 @@
+{
+  "originHash" : "d98c76c853ab52f4fb331fe6ec614114d3670fef87e41354d8576d55499b5af4",
+  "pins" : [
+    {
+      "identity" : "ios-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ppgco/ios-sdk.git",
+      "state" : {
+        "revision" : "c53ce2aaf8481fde955da127825166996c64854d",
+        "version" : "4.4.1"
+      }
+    }
+  ],
+  "version" : 3
+}

@@ -1,6 +1,11 @@
 # Uncomment this line to define a global platform for your project
 platform :ios, '16.0'
 
+# Native iOS SDK the example builds against. Only used on the CocoaPods path
+# described below — on Swift Package Manager the plugin resolves these itself.
+PPG_IOS_SDK_GIT = 'https://github.com/ppgco/ios-sdk.git'
+PPG_IOS_SDK_TAG = '4.4.1'
+
 # CocoaPods analytics sends network stats synchronously affecting flutter build latency.
 ENV['COCOAPODS_DISABLE_STATS'] = 'true'
 
@@ -31,12 +36,27 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-    pod 'PPG_framework', :git => 'https://github.com/ppgco/ios-sdk.git'
+    # PPG_framework, PPG_InAppMessages and PPG_LiveActivities reach Runner
+    # through the plugin's Swift Package (pushpushgo_sdk/ios/pushpushgo_sdk/
+    # Package.swift), so they are deliberately NOT pods here — declaring them
+    # again links every class twice and the app logs
+    # "Class ... is implemented in both ..." at launch.
+    #
+    # Running with Swift Package Manager disabled
+    # (`flutter config --no-enable-swift-package-manager`)? Then the plugin
+    # arrives as a pod and needs its dependencies from CocoaPods instead.
+    # Uncomment these three, and the LiveActivityWidget target at the bottom:
+    #   pod 'PPG_framework',      :git => PPG_IOS_SDK_GIT, :tag => PPG_IOS_SDK_TAG
+    #   pod 'PPG_InAppMessages',  :git => PPG_IOS_SDK_GIT, :tag => PPG_IOS_SDK_TAG
+    #   pod 'PPG_LiveActivities', :git => PPG_IOS_SDK_GIT, :tag => PPG_IOS_SDK_TAG
     
     target 'NSE' do
       use_frameworks!
       use_modular_headers!
-      pod 'PPG_framework', :git => 'https://github.com/ppgco/ios-sdk.git'
+      # PPG_framework is attached to this target as a Swift Package product in
+      # the Xcode project, the same way the widget gets PPG_LiveActivities.
+      # On the CocoaPods path uncomment:
+      #   pod 'PPG_framework', :git => PPG_IOS_SDK_GIT, :tag => PPG_IOS_SDK_TAG
     end
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
@@ -44,6 +64,17 @@ target 'Runner' do
     inherit! :search_paths
   end
 end
+
+# Widget Extension rendering the Live Activity (Lock Screen + Dynamic Island).
+# It ships no views of its own — they come from PPG_LiveActivities, which the
+# Xcode project attaches as a Swift Package product. On the CocoaPods path
+# uncomment this block instead:
+#
+# target 'LiveActivityWidget' do
+#   platform :ios, '17.2'
+#   use_frameworks!
+#   pod 'PPG_LiveActivities', :git => PPG_IOS_SDK_GIT, :tag => PPG_IOS_SDK_TAG
+# end
 
 post_install do |installer|
   installer.pods_project.targets.each do |target|

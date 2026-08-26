@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:pushpushgo_sdk/pushpushgo_sdk.dart';
 import 'buttons_view_model.dart';
 import 'inapp_view_model.dart';
+import 'live_activities_view_model.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey<ScaffoldMessengerState> scaffoldMessengerKey =
@@ -62,6 +63,39 @@ class _MyAppState extends State<MyApp> {
           ),
         );
       });
+
+      // Live Activities reuse the push SDK credentials, so this must run after
+      // PushpushgoSdk.initialize(). appGroupId is iOS-only and has to match
+      // both the Runner entitlements and
+      // LiveActivityWidget/MatchLiveActivityWidget.swift.
+      //
+      // Guarded separately: it throws when the native SDK did not start — most
+      // commonly because the credentials above are still placeholders — and
+      // that should not look like a failure of the whole initialization.
+      try {
+        await PPGLiveActivities.instance.initialize(
+          appGroupId: "YOUR APP GROUP ID",
+        );
+      } catch (e) {
+        log("Live Activities unavailable: $e");
+      }
+
+      // Taps on the Live Activity body and on its action buttons. actionIndex
+      // is -1 for the body, 0/1 for the buttons. Safe to register even when the
+      // initialize above failed.
+      PPGLiveActivities.instance.setClickHandler((click) {
+        log("Live Activity clicked: ${click.liveNotificationId} "
+            "action=${click.actionIndex} deepLink=${click.deepLink}");
+        scaffoldMessengerKey.currentState?.showSnackBar(
+          SnackBar(
+            content: Text(
+              "Live Activity tap: ${click.deepLink ?? 'no deep link'}",
+            ),
+            backgroundColor: Colors.teal,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      });
     } catch (e) {
       log("SDK initialization error: $e");
     } finally {
@@ -75,6 +109,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider(create: (_) => ButtonsViewModel(_pushpushgo)),
         ChangeNotifierProvider(create: (_) => InAppViewModel()),
+        ChangeNotifierProvider(create: (_) => LiveActivitiesViewModel()),
       ],
       child: MaterialApp(
         title: 'Flutter PPG Example',
@@ -118,7 +153,7 @@ class MyHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -127,6 +162,7 @@ class MyHomePage extends StatelessWidget {
             tabs: [
               Tab(icon: Icon(Icons.notifications_outlined), text: 'Push'),
               Tab(icon: Icon(Icons.chat_bubble_outline), text: 'In-App'),
+              Tab(icon: Icon(Icons.sports_soccer), text: 'Live'),
             ],
           ),
         ),
@@ -134,6 +170,7 @@ class MyHomePage extends StatelessWidget {
           children: [
             isInitialized ? const PushNotificationsTab() : const _LoadingTab(),
             isInitialized ? const InAppMessagesTab() : const _LoadingTab(),
+            isInitialized ? const LiveActivitiesTab() : const _LoadingTab(),
           ],
         ),
       ),
@@ -292,6 +329,197 @@ class _InAppMessagesTabState extends State<InAppMessagesTab> {
           ),
           const SizedBox(height: 24),
           Consumer<InAppViewModel>(
+            builder: (context, vm, child) {
+              if (vm.message.isEmpty) return const SizedBox.shrink();
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  vm.message,
+                  style: const TextStyle(fontSize: 15, color: Colors.black87),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LiveActivitiesTab extends StatefulWidget {
+  const LiveActivitiesTab({super.key});
+
+  @override
+  State<LiveActivitiesTab> createState() => _LiveActivitiesTabState();
+}
+
+class _LiveActivitiesTabState extends State<LiveActivitiesTab> {
+  final TextEditingController _liveNotificationController =
+      TextEditingController();
+
+  @override
+  void dispose() {
+    _liveNotificationController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final viewModel =
+        Provider.of<LiveActivitiesViewModel>(context, listen: false);
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: 16),
+          const Text(
+            'Device Support',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
+          Consumer<LiveActivitiesViewModel>(
+            builder: (context, vm, child) => Row(
+              children: [
+                Icon(
+                  vm.supported ? Icons.check_circle : Icons.cancel,
+                  color: vm.supported ? Colors.green : Colors.red,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    vm.supported
+                        ? 'Supported (Android 16+ / iOS 17.2+)'
+                        : 'Not supported on this device',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () => viewModel.checkSupport(),
+            child: const Text('Check Support'),
+          ),
+          const Divider(height: 32),
+          const Text(
+            'Campaign',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Follow a live notification created in the PPG dashboard. From '
+            'there the backend starts, updates and ends the activity over '
+            'push — the app does not need to be running.',
+            style: TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _liveNotificationController,
+            decoration: const InputDecoration(
+              labelText: 'Live Notification ID',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () =>
+                viewModel.subscribe(_liveNotificationController.text.trim()),
+            child: const Text('Subscribe'),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () =>
+                viewModel.unsubscribe(_liveNotificationController.text.trim()),
+            child: const Text('Unsubscribe'),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () =>
+                viewModel.checkActive(_liveNotificationController.text.trim()),
+            child: const Text('Is Active?'),
+          ),
+          const Divider(height: 32),
+          const Text(
+            'Local Simulation (Android only)',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            viewModel.canSimulate
+                ? 'Feeds the SDK the same envelope an FCM data message '
+                    'carries, so the whole pipeline runs without a backend.'
+                : 'Not available on iOS: the activity is created by an APNs '
+                    'push-to-start, which the app cannot fake. Use a real '
+                    'campaign to see it.',
+            style: const TextStyle(fontSize: 13, color: Colors.black54),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed:
+                viewModel.canSimulate ? () => viewModel.simulateStart() : null,
+            child: const Text('Simulate: start'),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed:
+                viewModel.canSimulate ? () => viewModel.simulateGoal() : null,
+            child: const Text('Simulate: goal (update)'),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed:
+                viewModel.canSimulate ? () => viewModel.simulateEnd() : null,
+            child: const Text('Simulate: end'),
+          ),
+          const Divider(height: 32),
+          const Text(
+            'Tracked Activities',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+          ),
+          const SizedBox(height: 8),
+          ElevatedButton(
+            onPressed: () => viewModel.refreshActivities(),
+            child: const Text('Refresh'),
+          ),
+          const SizedBox(height: 8),
+          Consumer<LiveActivitiesViewModel>(
+            builder: (context, vm, child) {
+              if (vm.activities.isEmpty) {
+                return const Text(
+                  'No activity is tracked on this device.',
+                  style: TextStyle(fontSize: 13, color: Colors.black54),
+                );
+              }
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final activity in vm.activities)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(
+                        // Score / team / phase fields are Android only —
+                        // iOS reports identifiers.
+                        '${activity.id}\n'
+                        'template: ${activity.template ?? '—'} · '
+                        'phase: ${activity.phase ?? '—'}',
+                        style: const TextStyle(fontSize: 13),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 24),
+          Consumer<LiveActivitiesViewModel>(
             builder: (context, vm, child) {
               if (vm.message.isEmpty) return const SizedBox.shrink();
               return Container(

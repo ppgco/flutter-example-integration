@@ -25,7 +25,9 @@ android {
         applicationId = "com.example.flutter_test_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // The PPG plugin requires API 26; Live Activities themselves render on
+        // Android 16 (API 36) and are reported as unsupported below it.
+        minSdk = 26
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -42,9 +44,9 @@ android {
 
 // build.gradle (:app)
 dependencies {
-    implementation "com.github.ppgco.android-sdk:sdk:3.1.0"
-    implementation "com.github.ppgco.android-sdk:inappmessages:3.1.0"
-    implementation platform('com.google.firebase:firebase-bom:34.11.0')
+    implementation "com.github.ppgco.android-sdk:sdk:3.2.0"
+    implementation "com.github.ppgco.android-sdk:inappmessages:3.2.0"
+    implementation platform('com.google.firebase:firebase-bom:34.18.0')
     implementation 'com.google.firebase:firebase-messaging'
 }
 
